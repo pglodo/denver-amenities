@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset=utf-8 />
+  <title>Denver Amenities Locator</title>
+  <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.3.4/dist/leaflet.css" />
+  <link href='http://fonts.googleapis.com/css?family=Lato' rel='stylesheet' type='text/css'>
+
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: whitesmoke;
+      font-family: Lato, sans-serif;
+      color: #0D0000;
+    }
+
+    header {
+      padding: 6px 10%;
+    }
+
+    h1 {
+      display: inline-block;
+      margin-right: 20px;
+      color: #001323;
+    }
+
+    h2 {
+      display: inline-block;
+      color: #001323;
+    }
+
+    #map {
+      width: 80%;
+      height: 540px;
+      margin: 10px auto;
+    }
+
+    footer {
+      padding: 6px 10%;
+      width: 80%;
+    }
+
+    p {
+      font-size: 1em;
+      color: #001323;
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <h1>Denver, Colorado</h1>
+    <h2>Amenities Locator</h2>
+  </header>
+
+  <div id='map'></div>
+
+  <footer>
+    <p>Map authored by Phillip Glodowski</p>
+    <p>Use this map to see which amenities (stores, after school programs, and fire stations) are within 1 km of the selected location. Simply click on the map to locate nearby amenities! Use the legend to toggle on/off each amenity. Amenity data downloaded
+      from the <a href="https://www.denvergov.org/opendata/" target="blank">Denver Open Data Catalog</a>.</p>
+    <ul>
+      <li>See my other projects on <a href="https://github.com/pglodo" target="blank">GitHub</a>!</li>
+    </ul>
+  </footer>
+
+  <script src="https://unpkg.com/leaflet@1.3.4/dist/leaflet.js"></script>
+  <script src="data/denver-fire-stations.js"></script>
+  <script src="data/denver-food-stores.js"></script>
+  <script src="data/after-school-programs.js"></script>
+  <script>
+    var map = L.map('map', {
+      center: [39.7256, -104.9252],
+      zoom: 11,
+    });
+
+    var tiles = L.tileLayer('https://cartodb-basemaps-{s}.global.ssl.fastly.net/rastertiles/dark_all/{z}/{x}/{y}.png', {
+      attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="http://cartodb.com/attributions">CartoDB</a>',
+      subdomains: 'abcd',
+      maxZoom: 19
+    }).addTo(map);
+
+    // BEGIN WRITING YOUR SOLUTION CODE HERE
+
+    // BUILDING LAYERS BELOW
+    var layerInfo = {
+      storesLayer: {
+        source: stores,
+        color: '#54a555',
+        info: "STORE_NAME"
+      },
+      programsLayer: {
+        source: programs,
+        color: '#885bb7',
+        info: "ORGANIZATI"
+      },
+      stationsLayer: {
+        source: stations,
+        color: '#dd7673',
+        info: "STATION_NU"
+      }
+    };
+
+    var geoJsonLayers = {};
+
+    for (var layer in layerInfo) {
+      geoJsonLayers[layer] = L.geoJson([layerInfo[layer].source], {
+        pointToLayer: function(feature, latlng) {
+          return L.circleMarker(latlng);
+        },
+        style: function(feature) {
+          return {
+            fillColor: [layerInfo[layer].color],
+            stroke: false,
+            fillOpacity: 1,
+            radius: 5
+          }
+        },
+        onEachFeature: function(feature, layerAgain) {
+          layerAgain.bindTooltip(layerAgain.feature.properties[layerInfo[layer].info]);
+        }
+      }).addTo(map);
+    };
+    // BUILDING LAYERS ABOVE
+
+    // BUILDING LEGEND/LAYER TOGGLE BELOW
+    var sourcesLayers = {
+      "<b style='color:#54a555; font-size: 14px;'>Stores</b>": geoJsonLayers.storesLayer,
+      "<b style='color:#885bb7; font-size: 14px;'>After School Prgrams</b>": geoJsonLayers.programsLayer,
+      "<b style='color:#dd7673; font-size: 14px;'>Fire Stations</b>": geoJsonLayers.stationsLayer
+    };
+
+    L.control.layers(null, sourcesLayers, {
+      collapsed: false
+    }).addTo(map);
+    // BUILDING LEGEND/LAYER TOGGLE ABOVE
+
+    // BUILDING PROXIMITY TOOL BELOW
+    map.on('click', function(e) {
+      for (var layer in layerInfo) {
+        geoJsonLayers[layer].eachLayer(function(layerAgain) {
+          var distance = e.latlng.distanceTo(layerAgain.getLatLng()) / 1000;
+
+          if (distance > 1) {
+            layerAgain.setStyle({
+              fillOpacity: .1
+            });
+          } else {
+            layerAgain.setStyle({
+              fillOpacity: 1
+            });
+          }; // end of distance check
+
+        });
+      };
+    });
+    // BUILDING PROXIMITY TOOL ABOVE
+  </script>
+
+</body>
+
+</html>
